@@ -1,0 +1,295 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { BookOpen, Trophy, Puzzle, BarChart3, Users, LogOut, Home } from "lucide-react"
+import { useClerk, useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
+
+interface SidebarProps {
+  isCollapsed?: boolean
+  onToggle?: () => void
+  activePage?: string
+}
+
+export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, activePage = "dashboard" }: SidebarProps) {
+  const { signOut } = useClerk();
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  
+  // Use internal state if no prop is provided, otherwise use the prop value
+  const [internalCollapsed, setInternalCollapsed] = useState(propIsCollapsed || false);
+  
+  // Use either the prop (if controlled from parent) or internal state
+  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalCollapsed;
+  
+  // State to handle image loading errors
+  const [logoError, setLogoError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  
+  // Reset error state when collapsing/expanding
+  useEffect(() => {
+    setLogoError(false);
+  }, [isCollapsed]);
+  
+  const toggleSidebar = () => {
+    // Toggle the internal state
+    setInternalCollapsed(!internalCollapsed);
+    
+    // Also call the parent's onToggle if provided
+    if (onToggle) {
+      onToggle();
+    }
+  }
+
+  // Handle image errors
+  const handleImageError = () => {
+    setLogoError(true);
+    console.log("Logo image failed to load");
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
+  return (
+    <div className={`bg-white flex flex-col fixed h-screen transition-all duration-300 z-10 ${
+      isCollapsed ? "w-[70px]" : "w-[300px]"
+    }`}>
+      <div className={`p-4 flex items-center ${isCollapsed ? "justify-center" : "gap-2"}`}>
+        <div className="flex items-center justify-center">
+          {isCollapsed ? (
+            logoError ? (
+              <div className="w-8 h-10 bg-gray-200 flex items-center justify-center font-bold text-lg text-[#704ee7]">S</div>
+            ) : (
+              <Image 
+                src="/S-logo.svg" 
+                alt="Sanjog" 
+                width={28} 
+                height={40} 
+                onError={handleImageError}
+                unoptimized={true}
+                priority={true}
+              />
+            )
+          ) : (
+            logoError ? (
+              <div className="w-28 h-10 bg-gray-200 flex items-center justify-center font-bold text-lg text-[#704ee7]">Sanjog</div>
+            ) : (
+              <Image 
+                src="/sanjog-logo.svg" 
+                alt="Sanjog" 
+                width={120} 
+                height={58} 
+                onError={handleImageError}
+                unoptimized={true}
+                priority={true}
+              />
+            )
+          )}
+        </div>
+        <button onClick={toggleSidebar} className={`ml-auto p-1 rounded-lg hover:bg-gray-100 ${isCollapsed && "hidden"}`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6 text-[#64748b]"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Add collapse button when sidebar is collapsed */}
+      {isCollapsed && (
+        <button
+          onClick={toggleSidebar}
+          className="self-center mt-2 p-1 rounded-full hover:bg-gray-100"
+          aria-label="Expand sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6 text-[#64748b]"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </button>
+      )}
+
+      {!isCollapsed && <div className="text-[#64748b] mb-2 px-6">Menu</div>}
+
+      <nav className="p-3 flex-1">
+        <Link
+          href="/dashboard"
+          className={`flex items-center p-3 ${
+            activePage === "dashboard" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Dashboard"
+        >
+          <Home className="w-5 h-5 min-w-5" />
+          {!isCollapsed && <span className="ml-3">Dashboard</span>}
+        </Link>
+
+        <Link
+          href="/dashboard/lessons"
+          className={`flex items-center p-3 ${
+            activePage === "lessons" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Lessons"
+        >
+          <BookOpen className="w-5 h-5 min-w-5" />
+          {!isCollapsed && <span className="ml-3">Lessons</span>}
+        </Link>
+
+        <Link
+          href="/dashboard/achievements"
+          className={`flex items-center p-3 ${
+            activePage === "achievements"
+              ? "bg-[#e3dbfe] text-[#704ee7] font-medium"
+              : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Achievements"
+        >
+          <Trophy className="w-5 h-5 min-w-5" />
+          {!isCollapsed && (
+            <>
+              <span className="ml-3">Achievements</span>
+              <span className="bg-[#704ee7] text-white text-xs rounded-full px-2 py-0.5 ml-auto">+1</span>
+            </>
+          )}
+        </Link>
+
+        <Link
+          href="/dashboard/challenges"
+          className={`flex items-center p-3 ${
+            activePage === "challenges" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Challenges"
+        >
+          <Puzzle className="w-5 h-5 min-w-5" />
+          {!isCollapsed && <span className="ml-3">Challenges</span>}
+        </Link>
+
+        <Link
+          href="/dashboard/progress"
+          className={`flex items-center p-3 ${
+            activePage === "progress" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Progress"
+        >
+          <BarChart3 className="w-5 h-5 min-w-5" />
+          {!isCollapsed && <span className="ml-3">Progress</span>}
+        </Link>
+
+        <Link
+          href="/dashboard/community"
+          className={`flex items-center p-3 ${
+            activePage === "community" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
+          } rounded-lg ${isCollapsed && "justify-center"}`}
+          title="Community"
+        >
+          <Users className="w-5 h-5 min-w-5" />
+          {!isCollapsed && (
+            <>
+              <span className="ml-3">Community</span>
+              <span className="bg-[#704ee7] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center ml-auto">
+                32
+              </span>
+            </>
+          )}
+        </Link>
+      </nav>
+
+      <div className="mt-auto pt-4 px-3 pb-4">
+        {isLoaded && user ? (
+          !isCollapsed ? (
+            <>
+              <div className="flex items-center gap-3 mb-4 px-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    {avatarError ? (
+                      <div className="w-10 h-10 bg-[#704ee7] flex items-center justify-center text-white font-medium">
+                        {user.firstName?.charAt(0) || user.username?.charAt(0) || "U"}
+                      </div>
+                    ) : (
+                      <Image
+                        src={user.imageUrl || "/Avatar.png"}
+                        alt={user.fullName || "User"}
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                        onError={() => setAvatarError(true)}
+                      />
+                    )}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-[#f0c332] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                    {user.publicMetadata?.level || 1}
+                  </div>
+                </div>
+                <div>
+                  <Link href="/dashboard/profile" className="font-medium text-[#191d23] hover:text-[#704ee7]">
+                    {user.fullName || user.username || "User"}
+                  </Link>
+                  <div className="text-xs text-[#a0abbb]">{user.primaryEmailAddress?.emailAddress || ""}</div>
+                </div>
+              </div>
+              <button 
+                onClick={handleSignOut}
+                className="flex items-center justify-center w-full p-3 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
+                Log out
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <Link
+                href="/dashboard/profile"
+                className="relative"
+                title="View Profile"
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  {avatarError ? (
+                    <div className="w-10 h-10 bg-[#704ee7] flex items-center justify-center text-white font-medium">
+                      {user.firstName?.charAt(0) || user.username?.charAt(0) || "U"}
+                    </div>
+                  ) : (
+                    <Image
+                      src={user.imageUrl || "/Avatar.png"}
+                      alt={user.fullName || "User"}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                      onError={() => setAvatarError(true)}
+                    />
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-[#f0c332] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {user.publicMetadata?.level || 1}
+                </div>
+              </Link>
+              <button 
+                onClick={handleSignOut}
+                className="flex items-center justify-center w-10 h-10 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          )
+        ) : (
+          <div className="animate-pulse">
+            <div className="h-10 bg-gray-200 rounded-full w-full mb-4"></div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
