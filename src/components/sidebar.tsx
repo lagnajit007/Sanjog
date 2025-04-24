@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 interface SidebarProps {
   isCollapsed?: boolean
   onToggle?: () => void
-  activePage?: "dashboard" | "lessons" | "achievements" | "challenges" | "progress" | "community"
+  activePage?: 'dashboard' | 'lessons' | 'achievements' | 'challenges' | 'progress' | 'community'
 }
 
 type PublicMetadata = {

@@ -7,6 +7,8 @@ import Sidebar from "@/components/sidebar"
 import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 
+type ActivePage = 'dashboard' | 'lessons' | 'achievements' | 'challenges' | 'progress' | 'community'
+
 export default function DashboardLayout({
   children,
 }: {
@@ -16,40 +18,55 @@ export default function DashboardLayout({
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [enableCustomCursor, setEnableCustomCursor] = useState(false)
-  const activePage = pathname.split('/')[2] || 'dashboard'
   
+  // Safely get active page with type assertion
+  const getActivePage = (): ActivePage => {
+    const page = pathname.split('/')[2]
+    const validPages: ActivePage[] = ['dashboard', 'lessons', 'achievements', 'challenges', 'progress', 'community']
+    return validPages.includes(page as ActivePage) ? page as ActivePage : 'dashboard'
+  }
+  
+  const activePage = getActivePage()
+
   // Add loading state for transitions
   useEffect(() => {
-    // Function to handle route change start
     const handleRouteChangeStart = () => {
       setIsLoading(true)
     }
     
-    // Function to handle route change complete
     const handleRouteChangeComplete = () => {
       setTimeout(() => {
         setIsLoading(false)
-      }, 300) // Slight delay to ensure smooth transition
+      }, 300)
     }
     
-    // Simulate route change events since Next.js App Router doesn't expose them directly
+    // Store original router methods
     const originalPush = router.push
     const originalReplace = router.replace
     
-    router.push = (...args: Parameters<typeof router.push>) => {
+    // Enhanced push method
+    router.push = async (...args: Parameters<typeof router.push>) => {
       handleRouteChangeStart()
-      return originalPush.apply(router, args)
+      try {
+        await originalPush.apply(router, args)
+      } finally {
+        handleRouteChangeComplete()
+      }
     }
     
-    router.replace = (...args: Parameters<typeof router.replace>) => {
+    // Enhanced replace method
+    router.replace = async (...args: Parameters<typeof router.replace>) => {
       handleRouteChangeStart()
-      return originalReplace.apply(router, args)
+      try {
+        await originalReplace.apply(router, args)
+      } finally {
+        handleRouteChangeComplete()
+      }
     }
     
-    // Run once on initial load
+    // Initial setup
     handleRouteChangeComplete()
     
-    // Option to enable/disable custom cursor via localStorage
     if (typeof window !== 'undefined') {
       setEnableCustomCursor(localStorage.getItem('enableCustomCursor') === 'true')
     }
@@ -60,22 +77,17 @@ export default function DashboardLayout({
     }
   }, [router])
   
-  // Update when pathname changes
   useEffect(() => {
     setIsLoading(false)
   }, [pathname])
-  
+
   return (
     <div className="min-h-screen bg-[#f5f7fb] flex">
-      {/* Conditional custom cursor */}
       {enableCustomCursor && <CustomCursor />}
       
-      {/* Sidebar outside the page transition */}
       <Sidebar activePage={activePage} />
       
-      {/* Main content with page transition */}
       <div className="flex-1 flex ml-[300px]">
-        {/* Loading overlay with animation */}
         <AnimatePresence>
           {isLoading && (
             <motion.div 
@@ -110,4 +122,4 @@ export default function DashboardLayout({
       </div>
     </div>
   )
-} 
+}
