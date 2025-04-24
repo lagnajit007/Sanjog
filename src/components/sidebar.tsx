@@ -10,54 +10,56 @@ import { useRouter } from "next/navigation"
 interface SidebarProps {
   isCollapsed?: boolean
   onToggle?: () => void
-  activePage?: string
+  activePage?: "dashboard" | "lessons" | "achievements" | "challenges" | "progress" | "community"
 }
 
-export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, activePage = "dashboard" }: SidebarProps) {
+type PublicMetadata = {
+  level?: number
+  [key: string]: unknown
+}
+
+export default function Sidebar({ 
+  isCollapsed: propIsCollapsed, 
+  onToggle, 
+  activePage = "dashboard" 
+}: SidebarProps) {
   const { signOut } = useClerk();
   const { user, isLoaded } = useUser();
   const router = useRouter();
   
-  // Use internal state if no prop is provided, otherwise use the prop value
   const [internalCollapsed, setInternalCollapsed] = useState(propIsCollapsed || false);
-  
-  // Use either the prop (if controlled from parent) or internal state
-  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalCollapsed;
-  
-  // State to handle image loading errors
   const [logoError, setLogoError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   
-  // Reset error state when collapsing/expanding
+  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalCollapsed;
+  
   useEffect(() => {
     setLogoError(false);
   }, [isCollapsed]);
   
   const toggleSidebar = () => {
-    // Toggle the internal state
     setInternalCollapsed(!internalCollapsed);
-    
-    // Also call the parent's onToggle if provided
-    if (onToggle) {
-      onToggle();
-    }
-  }
-
-  // Handle image errors
-  const handleImageError = () => {
-    setLogoError(true);
-    console.log("Logo image failed to load");
+    onToggle?.();
   }
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
+    try {
+      await signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
+
+  const userLevel = (user?.publicMetadata as PublicMetadata)?.level || 1;
+  const userInitial = user?.firstName?.charAt(0) || user?.username?.charAt(0) || "U";
+  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
 
   return (
     <div className={`bg-white flex flex-col fixed h-screen transition-all duration-300 z-10 ${
       isCollapsed ? "w-[70px]" : "w-[300px]"
     }`}>
+      {/* Header */}
       <div className={`p-4 flex items-center ${isCollapsed ? "justify-center" : "gap-2"}`}>
         <div className="flex items-center justify-center">
           {isCollapsed ? (
@@ -69,7 +71,7 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
                 alt="Sanjog" 
                 width={28} 
                 height={40} 
-                onError={handleImageError}
+                onError={() => setLogoError(true)}
                 unoptimized={true}
                 priority={true}
               />
@@ -83,28 +85,34 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
                 alt="Sanjog" 
                 width={120} 
                 height={58} 
-                onError={handleImageError}
+                onError={() => setLogoError(true)}
                 unoptimized={true}
                 priority={true}
               />
             )
           )}
         </div>
-        <button onClick={toggleSidebar} className={`ml-auto p-1 rounded-lg hover:bg-gray-100 ${isCollapsed && "hidden"}`}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6 text-[#64748b]"
+        {!isCollapsed && (
+          <button 
+            onClick={toggleSidebar} 
+            className="ml-auto p-1 rounded-lg hover:bg-gray-100"
+            aria-label="Collapse sidebar"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 text-[#64748b]"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      {/* Add collapse button when sidebar is collapsed */}
+      {/* Expand button when collapsed */}
       {isCollapsed && (
         <button
           onClick={toggleSidebar}
@@ -124,6 +132,7 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
         </button>
       )}
 
+      {/* Menu Section */}
       {!isCollapsed && <div className="text-[#64748b] mb-2 px-6">Menu</div>}
 
       <nav className="p-3 flex-1">
@@ -152,9 +161,7 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
         <Link
           href="/dashboard/achievements"
           className={`flex items-center p-3 ${
-            activePage === "achievements"
-              ? "bg-[#e3dbfe] text-[#704ee7] font-medium"
-              : "text-[#64748b] hover:bg-gray-100"
+            activePage === "achievements" ? "bg-[#e3dbfe] text-[#704ee7] font-medium" : "text-[#64748b] hover:bg-gray-100"
           } rounded-lg ${isCollapsed && "justify-center"}`}
           title="Achievements"
         >
@@ -208,16 +215,60 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
         </Link>
       </nav>
 
+      {/* User Section */}
       <div className="mt-auto pt-4 px-3 pb-4">
-        {isLoaded && user ? (
-          !isCollapsed ? (
-            <>
-              <div className="flex items-center gap-3 mb-4 px-3">
-                <div className="relative">
+        {isLoaded ? (
+          user ? (
+            !isCollapsed ? (
+              <>
+                <div className="flex items-center gap-3 mb-4 px-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
+                      {avatarError ? (
+                        <div className="w-10 h-10 bg-[#704ee7] flex items-center justify-center text-white font-medium">
+                          {userInitial}
+                        </div>
+                      ) : (
+                        <Image
+                          src={user.imageUrl || "/Avatar.png"}
+                          alt={user.fullName || "User"}
+                          width={40}
+                          height={40}
+                          className="object-cover"
+                          onError={() => setAvatarError(true)}
+                        />
+                      )}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-[#f0c332] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                      {userLevel}
+                    </div>
+                  </div>
+                  <div>
+                    <Link href="/dashboard/profile" className="font-medium text-[#191d23] hover:text-[#704ee7]">
+                      {user.fullName || user.username || "User"}
+                    </Link>
+                    {userEmail && <div className="text-xs text-[#a0abbb]">{userEmail}</div>}
+                  </div>
+                </div>
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center justify-center w-full p-3 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Log out
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <Link
+                  href="/dashboard/profile"
+                  className="relative"
+                  title="View Profile"
+                >
                   <div className="w-10 h-10 rounded-full overflow-hidden">
                     {avatarError ? (
                       <div className="w-10 h-10 bg-[#704ee7] flex items-center justify-center text-white font-medium">
-                        {user.firstName?.charAt(0) || user.username?.charAt(0) || "U"}
+                        {userInitial}
                       </div>
                     ) : (
                       <Image
@@ -231,59 +282,19 @@ export default function Sidebar({ isCollapsed: propIsCollapsed, onToggle, active
                     )}
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-[#f0c332] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                    {user.publicMetadata?.level || 1}
+                    {userLevel}
                   </div>
-                </div>
-                <div>
-                  <Link href="/dashboard/profile" className="font-medium text-[#191d23] hover:text-[#704ee7]">
-                    {user.fullName || user.username || "User"}
-                  </Link>
-                  <div className="text-xs text-[#a0abbb]">{user.primaryEmailAddress?.emailAddress || ""}</div>
-                </div>
+                </Link>
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center justify-center w-10 h-10 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
+                  title="Sign out"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
-              <button 
-                onClick={handleSignOut}
-                className="flex items-center justify-center w-full p-3 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
-              >
-                <LogOut className="w-5 h-5 mr-2" />
-                Log out
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <Link
-                href="/dashboard/profile"
-                className="relative"
-                title="View Profile"
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  {avatarError ? (
-                    <div className="w-10 h-10 bg-[#704ee7] flex items-center justify-center text-white font-medium">
-                      {user.firstName?.charAt(0) || user.username?.charAt(0) || "U"}
-                    </div>
-                  ) : (
-                    <Image
-                      src={user.imageUrl || "/Avatar.png"}
-                      alt={user.fullName || "User"}
-                      width={40}
-                      height={40}
-                      className="object-cover"
-                      onError={() => setAvatarError(true)}
-                    />
-                  )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 bg-[#f0c332] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                  {user.publicMetadata?.level || 1}
-                </div>
-              </Link>
-              <button 
-                onClick={handleSignOut}
-                className="flex items-center justify-center w-10 h-10 text-[#ff6265] border border-[#efefef] rounded-lg hover:bg-gray-50"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          )
+            )
+          ) : null
         ) : (
           <div className="animate-pulse">
             <div className="h-10 bg-gray-200 rounded-full w-full mb-4"></div>
