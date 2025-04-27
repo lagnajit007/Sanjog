@@ -18,4 +18,10 @@ export default function NotFound() {
       </div>
     </div>
   );
-} 
+}
+
+// This setting allows Next.js to generate this page without requiring authentication
+export const dynamic = 'force-static';
+export const generateStaticParams = async () => {
+  return [];
+}; 

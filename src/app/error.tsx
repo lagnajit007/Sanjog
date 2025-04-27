@@ -39,4 +39,6 @@ export default function Error({
       </div>
     </div>
   );
-} 
+}
+
+// Since this is a client component, no need for generateStaticParams or dynamic settings 

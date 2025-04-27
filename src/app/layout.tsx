@@ -34,8 +34,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Check for Clerk publishable key for build-time safety
+  const hasClerkKey = 
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.length > 0;
+
+  // Safe clerk configuration for build time
+  const clerkProps = hasClerkKey ? {} : {
+    publishableKey: "pk_test_placeholder-key-for-build-time"
+  };
+
   return (
-    <ClerkProvider>
+    <ClerkProvider {...clerkProps}>
       <html lang="en" className={inter.variable}>
         <body className="font-sans antialiased">
           <StyledComponentsRegistry>

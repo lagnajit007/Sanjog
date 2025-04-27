@@ -1,31 +1,30 @@
-import { defineFlatConfig } from 'eslint-define-config'
-import nextPlugin from '@next/eslint-plugin-next'
+import eslint from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
+import tseslint from 'typescript-eslint';
 
-export default defineFlatConfig([
+export default tseslint.config(
+  {
+    ignores: ['node_modules/', '.next/', 'dist/'],
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     plugins: {
-      '@next/next': nextPlugin
+      '@next/next': nextPlugin,
     },
     rules: {
-      ...nextPlugin.configs.recommended.rules,
-      // Your custom rules
-      'react/no-unescaped-entities': 'off',
-      '@next/next/no-page-custom-font': 'off',
-      '@next/next/no-html-link-for-pages': 'off',
-      'react/jsx-key': 'error'
+      'no-unused-vars': 'warn',
+      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-img-element': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
     },
-    settings: {
-      next: {
-        rootDir: '.'
-      }
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: {
+        project: './tsconfig.json',
+      },
     },
-    ignores: [
-      'node_modules/',
-      '.next/',
-      'out/',
-      'public/',
-      '*.config.js',
-      '*.config.mjs'
-    ]
   }
-])
+);
