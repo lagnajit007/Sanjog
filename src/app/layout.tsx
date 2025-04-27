@@ -45,7 +45,12 @@ export default function RootLayout({
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.length > 0;
 
   // Safe clerk configuration for build time
-  const clerkProps = hasClerkKey ? {} : {
+  const clerkProps = hasClerkKey ? {
+    signInUrl: "/sign-in",
+    signUpUrl: "/sign-up",
+    signInFallbackRedirectUrl: "/dashboard",
+    signUpFallbackRedirectUrl: "/dashboard"
+  } : {
     publishableKey: "pk_test_placeholder-key-for-build-time"
   };
 

@@ -60,6 +60,10 @@ const nextConfig = {
     // Add a fallback Clerk publishable key for build time
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fallback-build-key',
   },
+  // Skip static generation of dashboard pages
+  output: 'standalone',
+  // Customize page options
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
 };
 
 export default nextConfig; 
