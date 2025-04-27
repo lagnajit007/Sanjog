@@ -1,10 +1,15 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
-import { ClerkProvider } from "@clerk/nextjs"
 import StyledComponentsRegistry from '@/lib/registry'
 import GlobalPreloader from '@/components/GlobalPreloader'
 import ClientErrorBoundary from '@/components/ClientErrorBoundary'
+import dynamic from 'next/dynamic'
+
+// Conditionally import ClerkProvider only if we have an API key
+const ClerkProviderConditional = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  ? dynamic(() => import('@clerk/nextjs').then(mod => ({ default: mod.ClerkProvider })))
+  : ({ children }: { children: React.ReactNode }) => <>{children}</>;
 
 // Initialize the Inter font with proper configuration for Next.js 15+
 const inter = Inter({
@@ -34,9 +39,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Check for Clerk publishable key for build-time safety
+  // Use a safer approach to check for clerk keys
   const hasClerkKey = 
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
+    typeof process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'string' && 
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.length > 0;
 
   // Safe clerk configuration for build time
@@ -45,7 +50,7 @@ export default function RootLayout({
   };
 
   return (
-    <ClerkProvider {...clerkProps}>
+    <ClerkProviderConditional {...clerkProps}>
       <html lang="en" className={inter.variable}>
         <body className="font-sans antialiased">
           <StyledComponentsRegistry>
@@ -58,6 +63,6 @@ export default function RootLayout({
           </StyledComponentsRegistry>
         </body>
       </html>
-    </ClerkProvider>
+    </ClerkProviderConditional>
   )
 }
