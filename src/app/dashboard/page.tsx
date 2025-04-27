@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
+import { getTimeOfDay } from "@/utils/date-utils";
 
 export default async function Dashboard() {
   const user = await currentUser();
@@ -31,6 +32,9 @@ export default async function Dashboard() {
     { id: 2, name: "Jane Smith", points: "98,245", level: 9, avatar: "/Avatar.png" },
     { id: 3, name: "Alex Johnson", points: "87,112", level: 8, avatar: "/Avatar.png" }
   ];
+
+  // Get current time of day for greeting
+  const timeOfDay = getTimeOfDay();
 
   return (
     <div className="flex min-h-screen bg-[#f5f7fb]">
@@ -185,7 +189,7 @@ export default async function Dashboard() {
         {/* Greeting */}
         <div className="text-center mb-6">
           <h3 className="text-xl font-bold text-[#191d23] mb-1">
-            Good {getTimeOfDay()}, {user?.firstName || "Jenny"} 🔥
+            Good {timeOfDay}, {user?.firstName || "Jenny"} 🔥
           </h3>
           <p className="text-sm text-[#a0abbb]">Continue your learning to achieve your target!</p>
         </div>
@@ -266,12 +270,4 @@ export default async function Dashboard() {
       </div>
     </div>
   );
-}
-
-// Helper function to get time of day greeting
-function getTimeOfDay() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Morning";
-  if (hour < 18) return "Afternoon";
-  return "Evening";
 }

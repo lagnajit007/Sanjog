@@ -28,6 +28,10 @@ const nextConfig = {
       ],
     },
   ],
+  // Configure styled-components
+  compiler: {
+    styledComponents: true,
+  },
   // Handle WebAssembly and MediaPipe resources
   webpack: (config) => {
     // Allow importing wasm files

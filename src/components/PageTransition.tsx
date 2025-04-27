@@ -1,41 +1,32 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
-import { usePathname } from "next/navigation"
-import { ReactNode } from "react"
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface PageTransitionProps {
-  children: ReactNode
+  children: React.ReactNode;
 }
 
 export default function PageTransition({ children }: PageTransitionProps) {
-  const pathname = usePathname()
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  
+  // Only animate after initial render to prevent layout shift during hydration
+  useEffect(() => {
+    setShouldAnimate(true);
+  }, []);
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          transition: { 
-            duration: 0.25, 
-            ease: "easeOut"
-          }
-        }}
-        exit={{ 
-          opacity: 0,
-          y: -10,
-          transition: { 
-            duration: 0.15, 
-            ease: "easeIn"
-          }
-        }}
-        className="flex-1 w-full"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  )
+    <motion.div
+      initial={shouldAnimate ? { opacity: 0, y: 5 } : false}
+      animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 1 }}
+      transition={{
+        type: 'tween',
+        ease: 'easeOut',
+        duration: 0.25,
+      }}
+      className="w-full"
+    >
+      {children}
+    </motion.div>
+  );
 } 
